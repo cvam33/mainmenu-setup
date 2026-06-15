@@ -1,0 +1,15 @@
+{
+  "name": "com.asl.mainmenu-setup",
+  "version": "1.0.0",
+  "displayName": "Main Menu Setup Wizard",
+  "description": "A comprehensive setup wizard and configurator dashboard for creating and managing AAA game main menus with URP 2D/3D presets, custom controls rebinding, and audio subsystems.",
+  "unity": "2022.1",
+  "author": {
+    "name": "shivam",
+    "email": "lxcvam406@gmail.com"
+  },
+  "dependencies": {
+    "com.unity.inputsystem": "1.7.0",
+    "com.unity.render-pipelines.universal": "14.0.0"
+  }
+}
