@@ -105,14 +105,3 @@ public class MyGameMenuManager : MainMenuManager
 ```
 
 ---
-
-## 6. How to Update and Push Package Changes
-
-For package creators, updating package code via GitHub Desktop:
-
-1. Modify your files inside the local repository folder at `C:\Users\lxcva\Documents\GitHub\mainmenu-setup`.
-2. Open **GitHub Desktop**. It will show the modifications.
-3. Write a brief summary in the bottom-left corner explaining the changes.
-4. Click **`Commit to main`**.
-5. Click **`Push origin`** to push your updates live.
-6. In any project using the package, open Unity's Package Manager, select the package, and click **`Update`** to retrieve the latest version.
