@@ -35,8 +35,15 @@ namespace MCPForUnity.Editor.Helpers
         private string _lastScannedScenePath;
         private int _dashboardTab = 0;
         private bool _controlsLoaded = false;
-        private List<ExposedControl> _tempKeyboardControls = new List<ExposedControl>();
-        private List<ExposedControl> _tempControllerControls = new List<ExposedControl>();
+        private List<ExposedControlData> _tempKeyboardControls = new List<ExposedControlData>();
+        private List<ExposedControlData> _tempControllerControls = new List<ExposedControlData>();
+
+        [System.Serializable]
+        public class ExposedControlData
+        {
+            public string displayName;
+            public string actionName;
+        }
 
         // Sound config temporary values
         private bool _soundsLoaded = false;
@@ -555,19 +562,39 @@ namespace MCPForUnity.Editor.Helpers
                 var managerObj = GameObject.Find("MainMenuRoot");
                 if (managerObj != null)
                 {
-                    var settings = managerObj.GetComponent<SettingsManager>();
+                    var settings = managerObj.GetComponent("SettingsManager");
                     if (settings != null)
                     {
                         _tempKeyboardControls.Clear();
-                        foreach (var ctrl in settings.exposedKeyboardControls)
+                        var kbField = settings.GetType().GetField("exposedKeyboardControls");
+                        if (kbField != null)
                         {
-                            _tempKeyboardControls.Add(new ExposedControl { displayName = ctrl.displayName, actionName = ctrl.actionName });
+                            var kbList = kbField.GetValue(settings) as System.Collections.IList;
+                            if (kbList != null)
+                            {
+                                foreach (var ctrl in kbList)
+                                {
+                                    string disp = ctrl.GetType().GetField("displayName")?.GetValue(ctrl) as string;
+                                    string act = ctrl.GetType().GetField("actionName")?.GetValue(ctrl) as string;
+                                    _tempKeyboardControls.Add(new ExposedControlData { displayName = disp, actionName = act });
+                                }
+                            }
                         }
 
                         _tempControllerControls.Clear();
-                        foreach (var ctrl in settings.exposedControllerControls)
+                        var gpField = settings.GetType().GetField("exposedControllerControls");
+                        if (gpField != null)
                         {
-                            _tempControllerControls.Add(new ExposedControl { displayName = ctrl.displayName, actionName = ctrl.actionName });
+                            var gpList = gpField.GetValue(settings) as System.Collections.IList;
+                            if (gpList != null)
+                            {
+                                foreach (var ctrl in gpList)
+                                {
+                                    string disp = ctrl.GetType().GetField("displayName")?.GetValue(ctrl) as string;
+                                    string act = ctrl.GetType().GetField("actionName")?.GetValue(ctrl) as string;
+                                    _tempControllerControls.Add(new ExposedControlData { displayName = disp, actionName = act });
+                                }
+                            }
                         }
                         _controlsLoaded = true;
                     }
@@ -579,31 +606,39 @@ namespace MCPForUnity.Editor.Helpers
                 var managerObj = GameObject.Find("MainMenuRoot");
                 if (managerObj != null)
                 {
-                    var audioManager = managerObj.GetComponent<AudioManager>();
+                    var audioManager = managerObj.GetComponent("AudioManager");
                     if (audioManager != null)
                     {
+                        var audioType = audioManager.GetType();
+                        
                         _tempMainMenuMusic.Clear();
-                        if (audioManager.mainMenuMusic != null)
+                        var musicListField = audioType.GetField("mainMenuMusic");
+                        if (musicListField != null)
                         {
-                            foreach (var clip in audioManager.mainMenuMusic)
+                            var musicList = musicListField.GetValue(audioManager) as System.Collections.IList;
+                            if (musicList != null)
                             {
-                                _tempMainMenuMusic.Add(clip);
+                                foreach (var clip in musicList)
+                                {
+                                    _tempMainMenuMusic.Add(clip as AudioClip);
+                                }
                             }
                         }
-                        _tempLoopMainMenuMusic = audioManager.loopMainMenuMusic;
-                        _tempMainMenuMusicVolume = audioManager.mainMenuMusicVolume;
 
-                        _tempClickSFX = audioManager.clickSFX;
-                        _tempClickSFXVolume = audioManager.clickSFXVolume;
+                        _tempLoopMainMenuMusic = (bool)(audioType.GetField("loopMainMenuMusic")?.GetValue(audioManager) ?? true);
+                        _tempMainMenuMusicVolume = (float)(audioType.GetField("mainMenuMusicVolume")?.GetValue(audioManager) ?? 0.5f);
 
-                        _tempToggleSFX = audioManager.toggleSFX;
-                        _tempToggleSFXVolume = audioManager.toggleSFXVolume;
+                        _tempClickSFX = audioType.GetField("clickSFX")?.GetValue(audioManager) as AudioClip;
+                        _tempClickSFXVolume = (float)(audioType.GetField("clickSFXVolume")?.GetValue(audioManager) ?? 0.8f);
 
-                        _tempPanelChangeSFX = audioManager.panelChangeSFX;
-                        _tempPanelChangeSFXVolume = audioManager.panelChangeSFXVolume;
+                        _tempToggleSFX = audioType.GetField("toggleSFX")?.GetValue(audioManager) as AudioClip;
+                        _tempToggleSFXVolume = (float)(audioType.GetField("toggleSFXVolume")?.GetValue(audioManager) ?? 0.8f);
 
-                        _tempNavigateSFX = audioManager.navigateSFX;
-                        _tempNavigateSFXVolume = audioManager.navigateSFXVolume;
+                        _tempPanelChangeSFX = audioType.GetField("panelChangeSFX")?.GetValue(audioManager) as AudioClip;
+                        _tempPanelChangeSFXVolume = (float)(audioType.GetField("panelChangeSFXVolume")?.GetValue(audioManager) ?? 0.8f);
+
+                        _tempNavigateSFX = audioType.GetField("navigateSFX")?.GetValue(audioManager) as AudioClip;
+                        _tempNavigateSFXVolume = (float)(audioType.GetField("navigateSFXVolume")?.GetValue(audioManager) ?? 0.6f);
                     }
                     _soundsLoaded = true;
                 }
@@ -828,7 +863,7 @@ namespace MCPForUnity.Editor.Helpers
 
             var addKbBtn = new Button(() => {
                 string defaultAction = actionNames.Count > 0 ? actionNames[0] : "";
-                _tempKeyboardControls.Add(new ExposedControl { displayName = "New Keyboard Action", actionName = defaultAction });
+                _tempKeyboardControls.Add(new ExposedControlData { displayName = "New Keyboard Action", actionName = defaultAction });
                 DrawStep();
             }) { text = "+ Add Keyboard Control" };
             addKbBtn.style.height = 20;
@@ -852,7 +887,7 @@ namespace MCPForUnity.Editor.Helpers
 
             var addCtrlBtn = new Button(() => {
                 string defaultAction = actionNames.Count > 0 ? actionNames[0] : "";
-                _tempControllerControls.Add(new ExposedControl { displayName = "New Controller Action", actionName = defaultAction });
+                _tempControllerControls.Add(new ExposedControlData { displayName = "New Controller Action", actionName = defaultAction });
                 DrawStep();
             }) { text = "+ Add Controller Control" };
             addCtrlBtn.style.height = 20;
@@ -1030,7 +1065,7 @@ namespace MCPForUnity.Editor.Helpers
             return container;
         }
 
-        private VisualElement CreateEditorControlRow(ExposedControl ctrl, List<string> actionNames, bool isKeyboard)
+        private VisualElement CreateEditorControlRow(ExposedControlData ctrl, List<string> actionNames, bool isKeyboard)
         {
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
@@ -1365,53 +1400,119 @@ namespace MCPForUnity.Editor.Helpers
                     }
                 }
 
-                var settings = managerObj.GetComponent<SettingsManager>();
+                var settings = managerObj.GetComponent("SettingsManager");
                 if (settings != null)
                 {
                     Undo.RecordObject(settings, "Update Exposed Controls");
                     
-                    settings.exposedKeyboardControls.Clear();
-                    foreach (var ctrl in _tempKeyboardControls)
+                    var kbField = settings.GetType().GetField("exposedKeyboardControls");
+                    if (kbField != null)
                     {
-                        settings.exposedKeyboardControls.Add(new ExposedControl { displayName = ctrl.displayName, actionName = ctrl.actionName });
+                        var kbList = kbField.GetValue(settings) as System.Collections.IList;
+                        if (kbList != null)
+                        {
+                            kbList.Clear();
+                            var exposedControlType = System.Type.GetType("ExposedControl");
+                            if (exposedControlType == null)
+                            {
+                                foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+                                {
+                                    exposedControlType = assembly.GetType("ExposedControl");
+                                    if (exposedControlType != null) break;
+                                }
+                            }
+                            if (exposedControlType != null)
+                            {
+                                foreach (var ctrl in _tempKeyboardControls)
+                                {
+                                    var newCtrl = System.Activator.CreateInstance(exposedControlType);
+                                    exposedControlType.GetField("displayName")?.SetValue(newCtrl, ctrl.displayName);
+                                    exposedControlType.GetField("actionName")?.SetValue(newCtrl, ctrl.actionName);
+                                    kbList.Add(newCtrl);
+                                }
+                            }
+                        }
                     }
 
-                    settings.exposedControllerControls.Clear();
-                    foreach (var ctrl in _tempControllerControls)
+                    var gpField = settings.GetType().GetField("exposedControllerControls");
+                    if (gpField != null)
                     {
-                        settings.exposedControllerControls.Add(new ExposedControl { displayName = ctrl.displayName, actionName = ctrl.actionName });
+                        var gpList = gpField.GetValue(settings) as System.Collections.IList;
+                        if (gpList != null)
+                        {
+                            gpList.Clear();
+                            var exposedControlType = System.Type.GetType("ExposedControl");
+                            if (exposedControlType == null)
+                            {
+                                foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+                                {
+                                    exposedControlType = assembly.GetType("ExposedControl");
+                                    if (exposedControlType != null) break;
+                                }
+                            }
+                            if (exposedControlType != null)
+                            {
+                                foreach (var ctrl in _tempControllerControls)
+                                {
+                                    var newCtrl = System.Activator.CreateInstance(exposedControlType);
+                                    exposedControlType.GetField("displayName")?.SetValue(newCtrl, ctrl.displayName);
+                                    exposedControlType.GetField("actionName")?.SetValue(newCtrl, ctrl.actionName);
+                                    gpList.Add(newCtrl);
+                                }
+                            }
+                        }
                     }
                 }
 
-                var audioManager = managerObj.GetComponent<AudioManager>();
+                var audioManager = managerObj.GetComponent("AudioManager");
                 if (audioManager == null)
                 {
-                    audioManager = managerObj.AddComponent<AudioManager>();
+                    System.Type audioType = null;
+                    foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        audioType = assembly.GetType("AudioManager");
+                        if (audioType != null) break;
+                    }
+                    if (audioType != null)
+                    {
+                        audioManager = managerObj.AddComponent(audioType);
+                    }
                 }
 
                 if (audioManager != null)
                 {
                     Undo.RecordObject(audioManager, "Update Audio Manager Config");
 
-                    audioManager.mainMenuMusic.Clear();
-                    foreach (var clip in _tempMainMenuMusic)
+                    var audioType = audioManager.GetType();
+
+                    var musicListField = audioType.GetField("mainMenuMusic");
+                    if (musicListField != null)
                     {
-                        audioManager.mainMenuMusic.Add(clip);
+                        var musicList = musicListField.GetValue(audioManager) as System.Collections.IList;
+                        if (musicList != null)
+                        {
+                            musicList.Clear();
+                            foreach (var clip in _tempMainMenuMusic)
+                            {
+                                musicList.Add(clip);
+                            }
+                        }
                     }
-                    audioManager.loopMainMenuMusic = _tempLoopMainMenuMusic;
-                    audioManager.mainMenuMusicVolume = _tempMainMenuMusicVolume;
 
-                    audioManager.clickSFX = _tempClickSFX;
-                    audioManager.clickSFXVolume = _tempClickSFXVolume;
+                    audioType.GetField("loopMainMenuMusic")?.SetValue(audioManager, _tempLoopMainMenuMusic);
+                    audioType.GetField("mainMenuMusicVolume")?.SetValue(audioManager, _tempMainMenuMusicVolume);
 
-                    audioManager.toggleSFX = _tempToggleSFX;
-                    audioManager.toggleSFXVolume = _tempToggleSFXVolume;
+                    audioType.GetField("clickSFX")?.SetValue(audioManager, _tempClickSFX);
+                    audioType.GetField("clickSFXVolume")?.SetValue(audioManager, _tempClickSFXVolume);
 
-                    audioManager.panelChangeSFX = _tempPanelChangeSFX;
-                    audioManager.panelChangeSFXVolume = _tempPanelChangeSFXVolume;
+                    audioType.GetField("toggleSFX")?.SetValue(audioManager, _tempToggleSFX);
+                    audioType.GetField("toggleSFXVolume")?.SetValue(audioManager, _tempToggleSFXVolume);
 
-                    audioManager.navigateSFX = _tempNavigateSFX;
-                    audioManager.navigateSFXVolume = _tempNavigateSFXVolume;
+                    audioType.GetField("panelChangeSFX")?.SetValue(audioManager, _tempPanelChangeSFX);
+                    audioType.GetField("panelChangeSFXVolume")?.SetValue(audioManager, _tempPanelChangeSFXVolume);
+
+                    audioType.GetField("navigateSFX")?.SetValue(audioManager, _tempNavigateSFX);
+                    audioType.GetField("navigateSFXVolume")?.SetValue(audioManager, _tempNavigateSFXVolume);
                 }
             }
 
