@@ -117,7 +117,26 @@ public class SettingsManager : MonoBehaviour
         _backButton = _root.Q<Button>("settings-back-button");
         if (_backButton != null)
         {
-            _backButton.clicked += () => PanelManager.Instance?.PopPanel();
+            _backButton.clicked += () => {
+                if (MainMenuManager.Instance != null && MainMenuManager.Instance.IsInGame)
+                {
+                    MainMenuManager.Instance.TogglePause();
+                }
+                else
+                {
+                    PanelManager.Instance?.PopPanel();
+                }
+            };
+        }
+
+        // Query Main Menu Button
+        var mainMenuBtn = _root.Q<Button>("settings-main-menu-button");
+        if (mainMenuBtn != null)
+        {
+            mainMenuBtn.clicked += () => {
+                Time.timeScale = 1f;
+                SceneTransitionManager.Instance?.LoadScene("MainMenu");
+            };
         }
     }
 
@@ -149,11 +168,11 @@ public class SettingsManager : MonoBehaviour
         if (btn == null) return;
         if (active)
         {
-            btn.AddToClassList("settings-tab-button--active");
+            btn.AddToClassList("settings-sidebar-button--active");
         }
         else
         {
-            btn.RemoveFromClassList("settings-tab-button--active");
+            btn.RemoveFromClassList("settings-sidebar-button--active");
         }
     }
 
@@ -276,6 +295,8 @@ public class SettingsManager : MonoBehaviour
             return;
         }
 
+        AutoPopulateExposedControls();
+
         // Load saved overrides
         string overrides = PlayerPrefs.GetString("InputBindingOverrides", "");
         if (!string.IsNullOrEmpty(overrides))
@@ -284,6 +305,27 @@ public class SettingsManager : MonoBehaviour
         }
 
         RebuildKeybindsList();
+    }
+
+    private void AutoPopulateExposedControls()
+    {
+        if (_inputActionAsset == null) return;
+        
+        if (exposedKeyboardControls.Count == 0 && exposedControllerControls.Count == 0)
+        {
+            foreach (var map in _inputActionAsset.actionMaps)
+            {
+                if (map.name.Equals("UI", System.StringComparison.OrdinalIgnoreCase)) continue;
+                foreach (var action in map.actions)
+                {
+                    string displayName = System.Threading.Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(action.name.Replace("-", " ").Replace("_", " "));
+                    string actionPath = $"{map.name}/{action.name}";
+                    
+                    exposedKeyboardControls.Add(new ExposedControl { displayName = displayName, actionName = actionPath });
+                    exposedControllerControls.Add(new ExposedControl { displayName = displayName, actionName = actionPath });
+                }
+            }
+        }
     }
 
     private bool IsKeyboardMouseBinding(string path)

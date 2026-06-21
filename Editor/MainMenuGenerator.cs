@@ -45,9 +45,9 @@ namespace MCPForUnity.Editor.Helpers
 
             // Create MainCamera
             GameObject cameraObj = new GameObject("Main Camera");
+            cameraObj.tag = "MainCamera";
             var mainCamera = cameraObj.AddComponent<Camera>();
-            mainCamera.clearFlags = CameraClearFlags.SolidColor;
-            mainCamera.backgroundColor = new Color(0.08f, 0.09f, 0.11f, 1f); // Modern dark AAA charcoal background (#15181C)
+            mainCamera.clearFlags = CameraClearFlags.Skybox;
             cameraObj.AddComponent<AudioListener>();
 
             // Create Cinemachine Brain

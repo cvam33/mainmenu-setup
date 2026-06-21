@@ -36,15 +36,6 @@ namespace MCPForUnity.Editor.Helpers
         private string _lastScannedScenePath;
         private int _dashboardTab = 0;
         private bool _controlsLoaded = false;
-        private List<ExposedControlData> _tempKeyboardControls = new List<ExposedControlData>();
-        private List<ExposedControlData> _tempControllerControls = new List<ExposedControlData>();
-
-        [System.Serializable]
-        public class ExposedControlData
-        {
-            public string displayName;
-            public string actionName;
-        }
 
         // Sound config temporary values
         private bool _soundsLoaded = false;
@@ -73,11 +64,44 @@ namespace MCPForUnity.Editor.Helpers
             _outputPath = EditorPrefs.GetString("MainMenuWizard.OutputPath", "Assets/MainMenu1");
             _menuAlignment = EditorPrefs.GetString("MainMenuWizard.MenuAlignment", "Middle Center");
 
-            string scenePath = Path.Combine(_outputPath, "Scenes", "MainMenu.unity").Replace("\\", "/");
-            if (File.Exists(scenePath) && _currentStep == 1)
+            // Automatically resolve output path if the active scene is MainMenu or has MainMenuRoot
+            var activeScene = EditorSceneManager.GetActiveScene();
+            bool isMainMenuActive = activeScene.name.Equals("MainMenu", StringComparison.OrdinalIgnoreCase);
+            if (!isMainMenuActive && activeScene.isLoaded)
             {
+                foreach (var go in activeScene.GetRootGameObjects())
+                {
+                    if (go.name == "MainMenuRoot" || go.GetComponentInChildren<MainMenuManager>() != null)
+                    {
+                        isMainMenuActive = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isMainMenuActive)
+            {
+                string sceneDir = Path.GetDirectoryName(activeScene.path);
+                if (!string.IsNullOrEmpty(sceneDir))
+                {
+                    string parentDir = Path.GetDirectoryName(sceneDir);
+                    if (!string.IsNullOrEmpty(parentDir))
+                    {
+                        _outputPath = parentDir.Replace("\\", "/");
+                        EditorPrefs.SetString("MainMenuWizard.OutputPath", _outputPath);
+                    }
+                }
                 _currentStep = 6;
                 SaveState();
+            }
+            else
+            {
+                string scenePath = Path.Combine(_outputPath, "Scenes", "MainMenu.unity").Replace("\\", "/");
+                if (File.Exists(scenePath) && _currentStep == 1)
+                {
+                    _currentStep = 6;
+                    SaveState();
+                }
             }
 
             var root = rootVisualElement;
@@ -525,9 +549,52 @@ namespace MCPForUnity.Editor.Helpers
             _stepTitle.text = "Main Menu Dashboard";
             _stepDescription.text = "Scan and configure your active MainMenu scene features.";
 
+            var activeScene = EditorSceneManager.GetActiveScene();
+            string activeScenePath = activeScene.path.Replace("\\", "/");
             string scenePath = Path.Combine(_outputPath, "Scenes", "MainMenu.unity").Replace("\\", "/");
-            string activeScenePath = EditorSceneManager.GetActiveScene().path.Replace("\\", "/");
-            bool isSceneOpen = activeScenePath == scenePath;
+            bool isSceneOpen = false;
+
+            // Search active scene root objects for MainMenuRoot or MainMenuManager
+            bool hasMainMenuComponents = false;
+            if (activeScene.isLoaded)
+            {
+                foreach (var go in activeScene.GetRootGameObjects())
+                {
+                    if (go.name == "MainMenuRoot" || go.GetComponentInChildren<MainMenuManager>() != null)
+                    {
+                        hasMainMenuComponents = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hasMainMenuComponents)
+            {
+                isSceneOpen = true;
+                // Dynamically update output path if the scene is saved
+                if (!string.IsNullOrEmpty(activeScenePath))
+                {
+                    string sceneDir = Path.GetDirectoryName(activeScenePath);
+                    if (!string.IsNullOrEmpty(sceneDir))
+                    {
+                        string parentDir = Path.GetDirectoryName(sceneDir);
+                        if (!string.IsNullOrEmpty(parentDir))
+                        {
+                            string resolvedPath = parentDir.Replace("\\", "/");
+                            if (_outputPath != resolvedPath)
+                            {
+                                _outputPath = resolvedPath;
+                                SaveState();
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                scenePath = Path.Combine(_outputPath, "Scenes", "MainMenu.unity").Replace("\\", "/");
+                isSceneOpen = string.Equals(activeScenePath, scenePath, StringComparison.OrdinalIgnoreCase);
+            }
 
             if (activeScenePath != _lastScannedScenePath)
             {
@@ -569,88 +636,38 @@ namespace MCPForUnity.Editor.Helpers
                 }
             }
 
-            if (!_controlsLoaded && isSceneOpen)
-            {
-                var managerObj = GameObject.Find("MainMenuRoot");
-                if (managerObj != null)
-                {
-                    var settings = managerObj.GetComponent("SettingsManager");
-                    if (settings != null)
-                    {
-                        _tempKeyboardControls.Clear();
-                        var kbField = settings.GetType().GetField("exposedKeyboardControls");
-                        if (kbField != null)
-                        {
-                            var kbList = kbField.GetValue(settings) as System.Collections.IList;
-                            if (kbList != null)
-                            {
-                                foreach (var ctrl in kbList)
-                                {
-                                    string disp = ctrl.GetType().GetField("displayName")?.GetValue(ctrl) as string;
-                                    string act = ctrl.GetType().GetField("actionName")?.GetValue(ctrl) as string;
-                                    _tempKeyboardControls.Add(new ExposedControlData { displayName = disp, actionName = act });
-                                }
-                            }
-                        }
-
-                        _tempControllerControls.Clear();
-                        var gpField = settings.GetType().GetField("exposedControllerControls");
-                        if (gpField != null)
-                        {
-                            var gpList = gpField.GetValue(settings) as System.Collections.IList;
-                            if (gpList != null)
-                            {
-                                foreach (var ctrl in gpList)
-                                {
-                                    string disp = ctrl.GetType().GetField("displayName")?.GetValue(ctrl) as string;
-                                    string act = ctrl.GetType().GetField("actionName")?.GetValue(ctrl) as string;
-                                    _tempControllerControls.Add(new ExposedControlData { displayName = disp, actionName = act });
-                                }
-                            }
-                        }
-                        _controlsLoaded = true;
-                    }
-                }
-            }
+            // Controls auto-population logic is now handled in SettingsManager and generator.
 
             if (!_soundsLoaded && isSceneOpen)
             {
                 var managerObj = GameObject.Find("MainMenuRoot");
                 if (managerObj != null)
                 {
-                    var audioManager = managerObj.GetComponent("AudioManager");
+                    var audioManager = managerObj.GetComponent<AudioManager>();
                     if (audioManager != null)
                     {
-                        var audioType = audioManager.GetType();
-                        
                         _tempMainMenuMusic.Clear();
-                        var musicListField = audioType.GetField("mainMenuMusic");
-                        if (musicListField != null)
+                        if (audioManager.mainMenuMusic != null)
                         {
-                            var musicList = musicListField.GetValue(audioManager) as System.Collections.IList;
-                            if (musicList != null)
+                            foreach (var clip in audioManager.mainMenuMusic)
                             {
-                                foreach (var clip in musicList)
-                                {
-                                    _tempMainMenuMusic.Add(clip as AudioClip);
-                                }
+                                _tempMainMenuMusic.Add(clip);
                             }
                         }
+                        _tempLoopMainMenuMusic = audioManager.loopMainMenuMusic;
+                        _tempMainMenuMusicVolume = audioManager.mainMenuMusicVolume;
 
-                        _tempLoopMainMenuMusic = (bool)(audioType.GetField("loopMainMenuMusic")?.GetValue(audioManager) ?? true);
-                        _tempMainMenuMusicVolume = (float)(audioType.GetField("mainMenuMusicVolume")?.GetValue(audioManager) ?? 0.5f);
+                        _tempClickSFX = audioManager.clickSFX;
+                        _tempClickSFXVolume = audioManager.clickSFXVolume;
 
-                        _tempClickSFX = audioType.GetField("clickSFX")?.GetValue(audioManager) as AudioClip;
-                        _tempClickSFXVolume = (float)(audioType.GetField("clickSFXVolume")?.GetValue(audioManager) ?? 0.8f);
+                        _tempToggleSFX = audioManager.toggleSFX;
+                        _tempToggleSFXVolume = audioManager.toggleSFXVolume;
 
-                        _tempToggleSFX = audioType.GetField("toggleSFX")?.GetValue(audioManager) as AudioClip;
-                        _tempToggleSFXVolume = (float)(audioType.GetField("toggleSFXVolume")?.GetValue(audioManager) ?? 0.8f);
+                        _tempPanelChangeSFX = audioManager.panelChangeSFX;
+                        _tempPanelChangeSFXVolume = audioManager.panelChangeSFXVolume;
 
-                        _tempPanelChangeSFX = audioType.GetField("panelChangeSFX")?.GetValue(audioManager) as AudioClip;
-                        _tempPanelChangeSFXVolume = (float)(audioType.GetField("panelChangeSFXVolume")?.GetValue(audioManager) ?? 0.8f);
-
-                        _tempNavigateSFX = audioType.GetField("navigateSFX")?.GetValue(audioManager) as AudioClip;
-                        _tempNavigateSFXVolume = (float)(audioType.GetField("navigateSFXVolume")?.GetValue(audioManager) ?? 0.6f);
+                        _tempNavigateSFX = audioManager.navigateSFX;
+                        _tempNavigateSFXVolume = audioManager.navigateSFXVolume;
                     }
                     _soundsLoaded = true;
                 }
@@ -665,43 +682,29 @@ namespace MCPForUnity.Editor.Helpers
                 _dashboardTab = 0;
                 DrawStep();
             }) { text = "OVERVIEW" };
-            var controlsTabBtn = new Button(() => {
-                _dashboardTab = 1;
-                DrawStep();
-            }) { text = "CONTROLS" };
             var soundTabBtn = new Button(() => {
-                _dashboardTab = 2;
+                _dashboardTab = 1;
                 DrawStep();
             }) { text = "SOUND" };
 
             overviewTabBtn.style.flexGrow = 1;
             overviewTabBtn.style.height = 25;
-            controlsTabBtn.style.flexGrow = 1;
-            controlsTabBtn.style.height = 25;
             soundTabBtn.style.flexGrow = 1;
             soundTabBtn.style.height = 25;
 
             overviewTabBtn.style.backgroundColor = _dashboardTab == 0 ? new Color(0f, 0.68f, 0.71f) : new Color(0.22f, 0.27f, 0.32f);
             overviewTabBtn.style.color = _dashboardTab == 0 ? new Color(0.13f, 0.16f, 0.19f) : Color.white;
 
-            controlsTabBtn.style.backgroundColor = _dashboardTab == 1 ? new Color(0f, 0.68f, 0.71f) : new Color(0.22f, 0.27f, 0.32f);
-            controlsTabBtn.style.color = _dashboardTab == 1 ? new Color(0.13f, 0.16f, 0.19f) : Color.white;
-
-            soundTabBtn.style.backgroundColor = _dashboardTab == 2 ? new Color(0f, 0.68f, 0.71f) : new Color(0.22f, 0.27f, 0.32f);
-            soundTabBtn.style.color = _dashboardTab == 2 ? new Color(0.13f, 0.16f, 0.19f) : Color.white;
+            soundTabBtn.style.backgroundColor = _dashboardTab == 1 ? new Color(0f, 0.68f, 0.71f) : new Color(0.22f, 0.27f, 0.32f);
+            soundTabBtn.style.color = _dashboardTab == 1 ? new Color(0.13f, 0.16f, 0.19f) : Color.white;
 
             tabSelector.Add(overviewTabBtn);
-            tabSelector.Add(controlsTabBtn);
             tabSelector.Add(soundTabBtn);
             _contentRoot.Add(tabSelector);
 
             if (_dashboardTab == 0)
             {
                 DrawOverviewTab(isSceneOpen, scenePath);
-            }
-            else if (_dashboardTab == 1)
-            {
-                DrawControlsConfigTab(isSceneOpen, scenePath);
             }
             else
             {
@@ -831,97 +834,7 @@ namespace MCPForUnity.Editor.Helpers
             _contentRoot.Add(saveBtn);
         }
 
-        private void DrawControlsConfigTab(bool isSceneOpen, string scenePath)
-        {
-            if (!isSceneOpen)
-            {
-                var scanWarning = new Label("Open the MainMenu scene to configure controls.");
-                scanWarning.style.color = new Color(0.7f, 0.7f, 0.7f);
-                scanWarning.style.unityFontStyleAndWeight = FontStyle.Italic;
-                scanWarning.style.marginBottom = 15;
-                _contentRoot.Add(scanWarning);
-                return;
-            }
-
-            if (_tempInputAsset == null)
-            {
-                var inputWarning = new Label("Please link an Input Actions asset in the OVERVIEW tab first.");
-                inputWarning.style.color = Color.red;
-                inputWarning.style.unityFontStyleAndWeight = FontStyle.Bold;
-                inputWarning.style.marginBottom = 15;
-                _contentRoot.Add(inputWarning);
-                return;
-            }
-
-            var actionNames = new List<string>();
-            foreach (var map in _tempInputAsset.actionMaps)
-            {
-                foreach (var act in map.actions)
-                {
-                    actionNames.Add(map.name + "/" + act.name);
-                }
-            }
-
-            var scroll = new ScrollView();
-            scroll.style.flexGrow = 1;
-            scroll.style.maxHeight = 220;
-
-            var kbHeader = new Label("KEYBOARD CONTROLS");
-            kbHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
-            kbHeader.style.color = new Color(0f, 0.68f, 0.71f);
-            kbHeader.style.marginTop = 5;
-            kbHeader.style.marginBottom = 8;
-            scroll.Add(kbHeader);
-
-            for (int i = 0; i < _tempKeyboardControls.Count; i++)
-            {
-                var ctrl = _tempKeyboardControls[i];
-                var row = CreateEditorControlRow(ctrl, actionNames, true);
-                scroll.Add(row);
-            }
-
-            var addKbBtn = new Button(() => {
-                string defaultAction = actionNames.Count > 0 ? actionNames[0] : "";
-                _tempKeyboardControls.Add(new ExposedControlData { displayName = "New Keyboard Action", actionName = defaultAction });
-                DrawStep();
-            }) { text = "+ Add Keyboard Control" };
-            addKbBtn.style.height = 20;
-            addKbBtn.style.fontSize = 11;
-            addKbBtn.style.marginBottom = 15;
-            scroll.Add(addKbBtn);
-
-            var ctrlHeader = new Label("CONTROLLER CONTROLS");
-            ctrlHeader.style.unityFontStyleAndWeight = FontStyle.Bold;
-            ctrlHeader.style.color = new Color(0f, 0.68f, 0.71f);
-            ctrlHeader.style.marginTop = 10;
-            ctrlHeader.style.marginBottom = 8;
-            scroll.Add(ctrlHeader);
-
-            for (int i = 0; i < _tempControllerControls.Count; i++)
-            {
-                var ctrl = _tempControllerControls[i];
-                var row = CreateEditorControlRow(ctrl, actionNames, false);
-                scroll.Add(row);
-            }
-
-            var addCtrlBtn = new Button(() => {
-                string defaultAction = actionNames.Count > 0 ? actionNames[0] : "";
-                _tempControllerControls.Add(new ExposedControlData { displayName = "New Controller Action", actionName = defaultAction });
-                DrawStep();
-            }) { text = "+ Add Controller Control" };
-            addCtrlBtn.style.height = 20;
-            addCtrlBtn.style.fontSize = 11;
-            addCtrlBtn.style.marginBottom = 15;
-            scroll.Add(addCtrlBtn);
-
-            _contentRoot.Add(scroll);
-
-            var saveBtn = new Button(ApplyAndSaveChanges) { text = "Save Changes" };
-            saveBtn.style.height = 30;
-            saveBtn.style.marginTop = 15;
-            saveBtn.style.backgroundColor = new Color(0f, 0.68f, 0.71f);
-            saveBtn.style.color = new Color(0.13f, 0.16f, 0.19f);
-        }
+            // DrawControlsConfigTab removed as controls are auto-scanned from the Input Asset.
 
         private void DrawSoundConfigTab(bool isSceneOpen, string scenePath)
         {
@@ -1084,320 +997,32 @@ namespace MCPForUnity.Editor.Helpers
             return container;
         }
 
-        private VisualElement CreateEditorControlRow(ExposedControlData ctrl, List<string> actionNames, bool isKeyboard)
-        {
-            var row = new VisualElement();
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.marginBottom = 6;
-            row.style.alignItems = Align.Center;
-
-            var nameField = new TextField();
-            nameField.value = ctrl.displayName;
-            nameField.style.width = 110;
-            nameField.RegisterValueChangedCallback(evt => {
-                ctrl.displayName = evt.newValue;
-            });
-            row.Add(nameField);
-
-            var actionDropdown = new DropdownField(actionNames, ctrl.actionName);
-            actionDropdown.style.width = 130;
-            actionDropdown.style.marginLeft = 5;
-            actionDropdown.RegisterValueChangedCallback(evt => {
-                ctrl.actionName = evt.newValue;
-                DrawStep();
-            });
-            row.Add(actionDropdown);
-
-            var action = _tempInputAsset.FindAction(ctrl.actionName);
-            if (action != null)
-            {
-                var entries = GetBindableEntries(action, isKeyboard);
-                var bindingContainer = new VisualElement();
-                bindingContainer.style.flexDirection = FlexDirection.Column;
-                bindingContainer.style.flexGrow = 1;
-                bindingContainer.style.marginLeft = 5;
-
-                foreach (var entry in entries)
-                {
-                    if (entry.partName != null && entry.primaryIndex == -1 && entry.secondaryIndex == -1)
-                    {
-                        continue;
-                    }
-
-                    var entryRow = new VisualElement();
-                    entryRow.style.flexDirection = FlexDirection.Row;
-                    entryRow.style.alignItems = Align.Center;
-                    entryRow.style.marginBottom = 2;
-
-                    if (entry.partName != null)
-                    {
-                        var partLabel = new Label(entry.partName.ToUpper());
-                        partLabel.style.width = 40;
-                        partLabel.style.fontSize = 9;
-                        partLabel.style.color = Color.gray;
-                        entryRow.Add(partLabel);
-                    }
-
-                    // Primary Button
-                    var btnPrimary = new Button();
-                    btnPrimary.style.width = 50;
-                    btnPrimary.style.fontSize = 9;
-                    if (entry.primaryIndex >= 0)
-                    {
-                        btnPrimary.text = action.GetBindingDisplayString(entry.primaryIndex);
-                        int idx = entry.primaryIndex;
-                        var act = action;
-                        btnPrimary.clicked += () => StartEditorRebinding(act, idx);
-                    }
-                    else
-                    {
-                        btnPrimary.text = "Not Assigned";
-                        btnPrimary.SetEnabled(false);
-                    }
-                    entryRow.Add(btnPrimary);
-
-                    // Secondary Button
-                    var btnSecondary = new Button();
-                    btnSecondary.style.width = 50;
-                    btnSecondary.style.fontSize = 9;
-                    btnSecondary.style.marginLeft = 3;
-                    if (entry.secondaryIndex >= 0)
-                    {
-                        btnSecondary.text = action.GetBindingDisplayString(entry.secondaryIndex);
-                        int idx = entry.secondaryIndex;
-                        var act = action;
-                        btnSecondary.clicked += () => StartEditorRebinding(act, idx);
-                    }
-                    else
-                    {
-                        btnSecondary.text = "Not Assigned";
-                        btnSecondary.SetEnabled(false);
-                    }
-                    entryRow.Add(btnSecondary);
-
-                    bindingContainer.Add(entryRow);
-                }
-                row.Add(bindingContainer);
-            }
-            else
-            {
-                var missingLabel = new Label("Action Not Found");
-                missingLabel.style.color = Color.red;
-                missingLabel.style.fontSize = 10;
-                missingLabel.style.flexGrow = 1;
-                missingLabel.style.marginLeft = 5;
-                row.Add(missingLabel);
-            }
-
-            var removeBtn = new Button(() => {
-                if (isKeyboard) _tempKeyboardControls.Remove(ctrl);
-                else _tempControllerControls.Remove(ctrl);
-                DrawStep();
-            }) { text = "X" };
-            removeBtn.style.width = 20;
-            removeBtn.style.height = 20;
-            removeBtn.style.backgroundColor = new Color(0.6f, 0.2f, 0.2f);
-            removeBtn.style.color = Color.white;
-            removeBtn.style.marginLeft = 5;
-            row.Add(removeBtn);
-
-            return row;
-        }
-
-        private void StartEditorRebinding(UnityEngine.InputSystem.InputAction action, int bindingIndex)
-        {
-            if (action == null) return;
-
-            var map = action.actionMap;
-            bool wasEnabled = map.enabled;
-            if (wasEnabled) map.Disable();
-
-            var root = rootVisualElement;
-            var overlay = new VisualElement();
-            overlay.name = "editor-rebind-overlay";
-            overlay.style.position = Position.Absolute;
-            overlay.style.left = 0;
-            overlay.style.top = 0;
-            overlay.style.right = 0;
-            overlay.style.bottom = 0;
-            overlay.style.backgroundColor = new Color(0f, 0f, 0f, 0.85f);
-            overlay.style.justifyContent = Justify.Center;
-            overlay.style.alignItems = Align.Center;
-
-            var title = new Label("REBINDING KEY");
-            title.style.fontSize = 20;
-            title.style.unityFontStyleAndWeight = FontStyle.Bold;
-            title.style.color = new Color(0f, 0.68f, 0.71f);
-            title.style.marginBottom = 10;
-            overlay.Add(title);
-
-            var desc = new Label("Press any key or button on your device...");
-            desc.style.fontSize = 14;
-            desc.style.color = Color.white;
-            overlay.Add(desc);
-
-            root.Add(overlay);
-
-            var operation = action.PerformInteractiveRebinding(bindingIndex)
-                .WithControlsExcluding("Mouse")
-                .OnMatchWaitForAnother(0.1f);
-
-            if (action.bindings[bindingIndex].isPartOfComposite || action.type == UnityEngine.InputSystem.InputActionType.Button)
-            {
-                operation.WithExpectedControlType("Button");
-            }
-
-            operation.WithBindingGroup(null);
-
-            operation.OnComplete(op => {
-                root.Remove(overlay);
-                if (wasEnabled) map.Enable();
-
-                EditorUtility.SetDirty(action.actionMap.asset);
-                AssetDatabase.SaveAssets();
-
-                op.Dispose();
-                DrawStep();
-            })
-            .OnCancel(op => {
-                root.Remove(overlay);
-                if (wasEnabled) map.Enable();
-                op.Dispose();
-                DrawStep();
-            });
-
-            operation.Start();
-        }
-
-        private bool IsKeyboardMouseBinding(string path)
-        {
-            if (string.IsNullOrEmpty(path)) return false;
-            return path.StartsWith("<Keyboard>") || path.StartsWith("<Mouse>") || path.StartsWith("<Pointer>") || path.StartsWith("<Pen>");
-        }
-
-        private bool IsControllerBinding(string path)
-        {
-            if (string.IsNullOrEmpty(path)) return false;
-            return path.StartsWith("<Gamepad>") || path.StartsWith("<Joystick>") || path.StartsWith("<XRController>");
-        }
-
-        private class BindableEntry
-        {
-            public UnityEngine.InputSystem.InputAction action;
-            public string partName;
-            public int primaryIndex = -1;
-            public int secondaryIndex = -1;
-        }
-
-        private List<BindableEntry> GetBindableEntries(UnityEngine.InputSystem.InputAction action, bool isKeyboard)
-        {
-            var entries = new List<BindableEntry>();
-            if (action == null) return entries;
-
-            bool hasComposites = false;
-            for (int i = 0; i < action.bindings.Count; i++)
-            {
-                if (action.bindings[i].isComposite)
-                {
-                    hasComposites = true;
-                    break;
-                }
-            }
-
-            if (!hasComposites)
-            {
-                var entry = new BindableEntry();
-                entry.action = action;
-                entry.partName = null;
-
-                var matchingIndices = new List<int>();
-                for (int i = 0; i < action.bindings.Count; i++)
-                {
-                    var binding = action.bindings[i];
-                    if (binding.isComposite || binding.isPartOfComposite) continue;
-
-                    bool match = isKeyboard ? IsKeyboardMouseBinding(binding.path) : IsControllerBinding(binding.path);
-                    if (match)
-                    {
-                        matchingIndices.Add(i);
-                    }
-                }
-
-                if (matchingIndices.Count > 0) entry.primaryIndex = matchingIndices[0];
-                if (matchingIndices.Count > 1) entry.secondaryIndex = matchingIndices[1];
-                entries.Add(entry);
-            }
-            else
-            {
-                var partNames = new List<string>();
-                for (int i = 0; i < action.bindings.Count; i++)
-                {
-                    var binding = action.bindings[i];
-                    if (binding.isPartOfComposite && !string.IsNullOrEmpty(binding.name))
-                    {
-                        if (!partNames.Contains(binding.name))
-                        {
-                            partNames.Add(binding.name);
-                        }
-                    }
-                }
-
-                foreach (var part in partNames)
-                {
-                    var entry = new BindableEntry();
-                    entry.action = action;
-                    entry.partName = part;
-
-                    var matchingIndices = new List<int>();
-                    for (int i = 0; i < action.bindings.Count; i++)
-                    {
-                        var binding = action.bindings[i];
-                        if (binding.isPartOfComposite && binding.name == part)
-                        {
-                            bool match = isKeyboard ? IsKeyboardMouseBinding(binding.path) : IsControllerBinding(binding.path);
-                            if (match)
-                            {
-                                matchingIndices.Add(i);
-                            }
-                        }
-                    }
-
-                    if (matchingIndices.Count > 0) entry.primaryIndex = matchingIndices[0];
-                    if (matchingIndices.Count > 1) entry.secondaryIndex = matchingIndices[1];
-                    entries.Add(entry);
-                }
-
-                var nonCompositeMatchingIndices = new List<int>();
-                for (int i = 0; i < action.bindings.Count; i++)
-                {
-                    var binding = action.bindings[i];
-                    if (binding.isComposite || binding.isPartOfComposite) continue;
-
-                    bool match = isKeyboard ? IsKeyboardMouseBinding(binding.path) : IsControllerBinding(binding.path);
-                    if (match)
-                    {
-                        nonCompositeMatchingIndices.Add(i);
-                    }
-                }
-
-                if (nonCompositeMatchingIndices.Count > 0)
-                {
-                    var entry = new BindableEntry();
-                    entry.action = action;
-                    entry.partName = null;
-                    entry.primaryIndex = nonCompositeMatchingIndices[0];
-                    if (nonCompositeMatchingIndices.Count > 1) entry.secondaryIndex = nonCompositeMatchingIndices[1];
-                    entries.Add(entry);
-                }
-            }
-
-            return entries;
-        }
+        // Editor control config rows, rebinding, and bindable entries queries removed.
 
         private void ApplyAndSaveChanges()
         {
-            string scenePath = Path.Combine(_outputPath, "Scenes", "MainMenu.unity").Replace("\\", "/");
-            bool isSceneOpen = EditorSceneManager.GetActiveScene().path.Replace("\\", "/") == scenePath;
+            var activeScene = EditorSceneManager.GetActiveScene();
+            string activeScenePath = activeScene.path.Replace("\\", "/");
+            bool isSceneOpen = false;
+
+            if (activeScene.isLoaded)
+            {
+                foreach (var go in activeScene.GetRootGameObjects())
+                {
+                    if (go.name == "MainMenuRoot" || go.GetComponentInChildren<MainMenuManager>() != null)
+                    {
+                        isSceneOpen = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!isSceneOpen)
+            {
+                string scenePath = Path.Combine(_outputPath, "Scenes", "MainMenu.unity").Replace("\\", "/");
+                isSceneOpen = string.Equals(activeScenePath, scenePath, StringComparison.OrdinalIgnoreCase);
+            }
+
             if (!isSceneOpen)
             {
                 EditorUtility.DisplayDialog("Save Failed", "Please open the MainMenu scene before applying changes.", "OK");
@@ -1418,6 +1043,24 @@ namespace MCPForUnity.Editor.Helpers
                     mainMenuManager.menuAlignment = _menuAlignment;
                 }
 
+                // Update the UXML file on disk so the layout class is saved permanently!
+                string uxmlPath = Path.Combine(_outputPath, "UI", "UXML", "MainMenu.uxml").Replace("\\", "/");
+                if (File.Exists(uxmlPath))
+                {
+                    string uxmlContent = File.ReadAllText(uxmlPath);
+                    int classStart = uxmlContent.IndexOf("class=\"menu-root");
+                    if (classStart >= 0)
+                    {
+                        int classEnd = uxmlContent.IndexOf("\"", classStart + 7);
+                        if (classEnd >= 0)
+                        {
+                            string newClassString = $"class=\"menu-root menu-root--{_menuAlignment.ToLower().Replace(" ", "-")}\"";
+                            uxmlContent = uxmlContent.Remove(classStart, classEnd - classStart + 1).Insert(classStart, newClassString);
+                            File.WriteAllText(uxmlPath, uxmlContent);
+                        }
+                    }
+                }
+
                 var uiDoc = managerObj.GetComponent<UIDocument>();
                 if (uiDoc != null && uiDoc.rootVisualElement != null)
                 {
@@ -1433,119 +1076,59 @@ namespace MCPForUnity.Editor.Helpers
                     }
                 }
 
-                var settings = managerObj.GetComponent("SettingsManager");
+                var settings = managerObj.GetComponent<SettingsManager>();
                 if (settings != null)
                 {
                     Undo.RecordObject(settings, "Update Exposed Controls");
                     
-                    var kbField = settings.GetType().GetField("exposedKeyboardControls");
-                    if (kbField != null)
+                    settings.exposedKeyboardControls.Clear();
+                    settings.exposedControllerControls.Clear();
+                    if (_tempInputAsset != null)
                     {
-                        var kbList = kbField.GetValue(settings) as System.Collections.IList;
-                        if (kbList != null)
+                        foreach (var map in _tempInputAsset.actionMaps)
                         {
-                            kbList.Clear();
-                            var exposedControlType = System.Type.GetType("ExposedControl");
-                            if (exposedControlType == null)
+                            if (map.name.Equals("UI", System.StringComparison.OrdinalIgnoreCase)) continue;
+                            foreach (var action in map.actions)
                             {
-                                foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
-                                {
-                                    exposedControlType = assembly.GetType("ExposedControl");
-                                    if (exposedControlType != null) break;
-                                }
-                            }
-                            if (exposedControlType != null)
-                            {
-                                foreach (var ctrl in _tempKeyboardControls)
-                                {
-                                    var newCtrl = System.Activator.CreateInstance(exposedControlType);
-                                    exposedControlType.GetField("displayName")?.SetValue(newCtrl, ctrl.displayName);
-                                    exposedControlType.GetField("actionName")?.SetValue(newCtrl, ctrl.actionName);
-                                    kbList.Add(newCtrl);
-                                }
-                            }
-                        }
-                    }
-
-                    var gpField = settings.GetType().GetField("exposedControllerControls");
-                    if (gpField != null)
-                    {
-                        var gpList = gpField.GetValue(settings) as System.Collections.IList;
-                        if (gpList != null)
-                        {
-                            gpList.Clear();
-                            var exposedControlType = System.Type.GetType("ExposedControl");
-                            if (exposedControlType == null)
-                            {
-                                foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
-                                {
-                                    exposedControlType = assembly.GetType("ExposedControl");
-                                    if (exposedControlType != null) break;
-                                }
-                            }
-                            if (exposedControlType != null)
-                            {
-                                foreach (var ctrl in _tempControllerControls)
-                                {
-                                    var newCtrl = System.Activator.CreateInstance(exposedControlType);
-                                    exposedControlType.GetField("displayName")?.SetValue(newCtrl, ctrl.displayName);
-                                    exposedControlType.GetField("actionName")?.SetValue(newCtrl, ctrl.actionName);
-                                    gpList.Add(newCtrl);
-                                }
+                                string displayName = System.Threading.Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(action.name.Replace("-", " ").Replace("_", " "));
+                                string actionPath = $"{map.name}/{action.name}";
+                                
+                                settings.exposedKeyboardControls.Add(new ExposedControl { displayName = displayName, actionName = actionPath });
+                                settings.exposedControllerControls.Add(new ExposedControl { displayName = displayName, actionName = actionPath });
                             }
                         }
                     }
                 }
 
-                var audioManager = managerObj.GetComponent("AudioManager");
+                var audioManager = managerObj.GetComponent<AudioManager>();
                 if (audioManager == null)
                 {
-                    System.Type audioType = null;
-                    foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
-                    {
-                        audioType = assembly.GetType("AudioManager");
-                        if (audioType != null) break;
-                    }
-                    if (audioType != null)
-                    {
-                        audioManager = managerObj.AddComponent(audioType);
-                    }
+                    audioManager = managerObj.AddComponent<AudioManager>();
                 }
 
                 if (audioManager != null)
                 {
                     Undo.RecordObject(audioManager, "Update Audio Manager Config");
 
-                    var audioType = audioManager.GetType();
-
-                    var musicListField = audioType.GetField("mainMenuMusic");
-                    if (musicListField != null)
+                    audioManager.mainMenuMusic.Clear();
+                    foreach (var clip in _tempMainMenuMusic)
                     {
-                        var musicList = musicListField.GetValue(audioManager) as System.Collections.IList;
-                        if (musicList != null)
-                        {
-                            musicList.Clear();
-                            foreach (var clip in _tempMainMenuMusic)
-                            {
-                                musicList.Add(clip);
-                            }
-                        }
+                        audioManager.mainMenuMusic.Add(clip);
                     }
+                    audioManager.loopMainMenuMusic = _tempLoopMainMenuMusic;
+                    audioManager.mainMenuMusicVolume = _tempMainMenuMusicVolume;
 
-                    audioType.GetField("loopMainMenuMusic")?.SetValue(audioManager, _tempLoopMainMenuMusic);
-                    audioType.GetField("mainMenuMusicVolume")?.SetValue(audioManager, _tempMainMenuMusicVolume);
+                    audioManager.clickSFX = _tempClickSFX;
+                    audioManager.clickSFXVolume = _tempClickSFXVolume;
 
-                    audioType.GetField("clickSFX")?.SetValue(audioManager, _tempClickSFX);
-                    audioType.GetField("clickSFXVolume")?.SetValue(audioManager, _tempClickSFXVolume);
+                    audioManager.toggleSFX = _tempToggleSFX;
+                    audioManager.toggleSFXVolume = _tempToggleSFXVolume;
 
-                    audioType.GetField("toggleSFX")?.SetValue(audioManager, _tempToggleSFX);
-                    audioType.GetField("toggleSFXVolume")?.SetValue(audioManager, _tempToggleSFXVolume);
+                    audioManager.panelChangeSFX = _tempPanelChangeSFX;
+                    audioManager.panelChangeSFXVolume = _tempPanelChangeSFXVolume;
 
-                    audioType.GetField("panelChangeSFX")?.SetValue(audioManager, _tempPanelChangeSFX);
-                    audioType.GetField("panelChangeSFXVolume")?.SetValue(audioManager, _tempPanelChangeSFXVolume);
-
-                    audioType.GetField("navigateSFX")?.SetValue(audioManager, _tempNavigateSFX);
-                    audioType.GetField("navigateSFXVolume")?.SetValue(audioManager, _tempNavigateSFXVolume);
+                    audioManager.navigateSFX = _tempNavigateSFX;
+                    audioManager.navigateSFXVolume = _tempNavigateSFXVolume;
                 }
             }
 
