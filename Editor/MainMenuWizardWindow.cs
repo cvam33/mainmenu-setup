@@ -516,20 +516,16 @@ namespace MCPForUnity.Editor.Helpers
                 var managerObj = GameObject.Find("MainMenuRoot");
                 if (managerObj != null)
                 {
-                    var mainMenuManager = managerObj.GetComponent("MainMenuManager");
+                    var mainMenuManager = managerObj.GetComponent<MainMenuManager>();
                     if (mainMenuManager != null)
                     {
-                        var field = mainMenuManager.GetType().GetField("sceneToLoad");
-                        if (field != null)
+                        string sceneName = mainMenuManager.sceneToLoad;
+                        if (!string.IsNullOrEmpty(sceneName) && _tempSceneAsset == null)
                         {
-                            string sceneName = field.GetValue(mainMenuManager) as string;
-                            if (!string.IsNullOrEmpty(sceneName) && _tempSceneAsset == null)
+                            var guids = AssetDatabase.FindAssets("t:Scene " + sceneName);
+                            if (guids.Length > 0)
                             {
-                                var guids = AssetDatabase.FindAssets("t:Scene " + sceneName);
-                                if (guids.Length > 0)
-                                {
-                                    _tempSceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(AssetDatabase.GUIDToAssetPath(guids[0]));
-                                }
+                                _tempSceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(AssetDatabase.GUIDToAssetPath(guids[0]));
                             }
                         }
                     }
@@ -538,14 +534,10 @@ namespace MCPForUnity.Editor.Helpers
                 var eventSystem = GameObject.Find("EventSystem") ?? GameObject.Find("UIEventSystem");
                 if (eventSystem != null && _tempInputAsset == null)
                 {
-                    var inputModule = eventSystem.GetComponent("InputSystemUIInputModule");
+                    var inputModule = eventSystem.GetComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
                     if (inputModule != null)
                     {
-                        var prop = inputModule.GetType().GetProperty("actionsAsset");
-                        if (prop != null)
-                        {
-                            _tempInputAsset = prop.GetValue(inputModule) as UnityEngine.InputSystem.InputActionAsset;
-                        }
+                        _tempInputAsset = inputModule.actionsAsset;
                     }
                 }
             }
@@ -1353,15 +1345,13 @@ namespace MCPForUnity.Editor.Helpers
             var managerObj = GameObject.Find("MainMenuRoot");
             if (managerObj != null)
             {
-                var mainMenuManager = managerObj.GetComponent("MainMenuManager");
+                var mainMenuManager = managerObj.GetComponent<MainMenuManager>();
                 if (mainMenuManager != null)
                 {
                     Undo.RecordObject(mainMenuManager, "Update Main Menu Scene Configuration");
-
-                    var field = mainMenuManager.GetType().GetField("sceneToLoad");
-                    if (field != null && _tempSceneAsset != null)
+                    if (_tempSceneAsset != null)
                     {
-                        field.SetValue(mainMenuManager, _tempSceneAsset.name);
+                        mainMenuManager.sceneToLoad = _tempSceneAsset.name;
                     }
                 }
 
@@ -1418,16 +1408,11 @@ namespace MCPForUnity.Editor.Helpers
             var eventSystem = GameObject.Find("EventSystem") ?? GameObject.Find("UIEventSystem");
             if (eventSystem != null && _tempInputAsset != null)
             {
-                var inputModule = eventSystem.GetComponent("InputSystemUIInputModule");
+                var inputModule = eventSystem.GetComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
                 if (inputModule != null)
                 {
                     Undo.RecordObject(inputModule, "Update Input Asset");
-
-                    var prop = inputModule.GetType().GetProperty("actionsAsset");
-                    if (prop != null)
-                    {
-                        prop.SetValue(inputModule, _tempInputAsset);
-                    }
+                    inputModule.actionsAsset = _tempInputAsset;
                 }
             }
 

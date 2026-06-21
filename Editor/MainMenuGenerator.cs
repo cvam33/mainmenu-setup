@@ -16,48 +16,14 @@ namespace MCPForUnity.Editor.Helpers
 
             // 1. Create directories
             string scenesDir = Path.Combine(outputPath, "Scenes");
-            string scriptsCoreDir = Path.Combine(outputPath, "Scripts", "Core");
-            string scriptsSettingsDir = Path.Combine(outputPath, "Scripts", "Settings");
-            string scriptsCamDir = Path.Combine(outputPath, "Scripts", "Camera");
-            string scriptsSaveDir = Path.Combine(outputPath, "Scripts", "SaveSystem");
             string uiUxmlDir = Path.Combine(outputPath, "UI", "UXML");
             string uiUssDir = Path.Combine(outputPath, "UI", "USS");
             string settingsDir = Path.Combine(outputPath, "Settings");
 
             Directory.CreateDirectory(scenesDir);
-            Directory.CreateDirectory(scriptsCoreDir);
-            Directory.CreateDirectory(scriptsSettingsDir);
-            Directory.CreateDirectory(scriptsCamDir);
             Directory.CreateDirectory(uiUxmlDir);
             Directory.CreateDirectory(uiUssDir);
             Directory.CreateDirectory(settingsDir);
-
-            if (preset == "Single Player" || preset == "Local Multiplayer" || preset == "Mobile")
-            {
-                Directory.CreateDirectory(scriptsSaveDir);
-            }
-
-            // 2. Write C# Scripts
-            File.WriteAllText(Path.Combine(scriptsCoreDir, "MainMenuManager.cs"), MainMenuTemplateRegistry.GetMainMenuManager(preset, is2D));
-            File.WriteAllText(Path.Combine(scriptsCoreDir, "PanelManager.cs"), MainMenuTemplateRegistry.GetPanelManager());
-            File.WriteAllText(Path.Combine(scriptsCoreDir, "SceneTransitionManager.cs"), MainMenuTemplateRegistry.GetSceneTransitionManager());
-            File.WriteAllText(Path.Combine(scriptsCoreDir, "AudioManager.cs"), MainMenuTemplateRegistry.GetAudioManager());
-            File.WriteAllText(Path.Combine(scriptsSettingsDir, "SettingsManager.cs"), MainMenuTemplateRegistry.GetSettingsManager());
-
-            if (is2D)
-            {
-                File.WriteAllText(Path.Combine(scriptsCamDir, "CameraController2D.cs"), MainMenuTemplateRegistry.GetCameraController2D());
-            }
-            else
-            {
-                File.WriteAllText(Path.Combine(scriptsCamDir, "CameraController3D.cs"), MainMenuTemplateRegistry.GetCameraController3D());
-            }
-
-            if (preset == "Single Player" || preset == "Local Multiplayer" || preset == "Mobile")
-            {
-                File.WriteAllText(Path.Combine(scriptsSaveDir, "SaveSlotManager.cs"), MainMenuTemplateRegistry.GetSaveSlotManager());
-                File.WriteAllText(Path.Combine(scriptsSaveDir, "SaveSlotUI.cs"), MainMenuTemplateRegistry.GetSaveSlotUI());
-            }
 
             // 3. Write UI Files
             File.WriteAllText(Path.Combine(uiUxmlDir, "MainMenu.uxml"), MainMenuTemplateRegistry.GetUXMLMainMenu());
@@ -154,20 +120,20 @@ namespace MCPForUnity.Editor.Helpers
             {
                 uiDoc.panelSettings = panelSettings;
             }
-            AddComponentByName(uiRootObj, "MainMenuManager");
-            AddComponentByName(uiRootObj, "PanelManager");
-            AddComponentByName(uiRootObj, "AudioManager");
-            AddComponentByName(uiRootObj, "SettingsManager");
+            uiRootObj.AddComponent<MainMenuManager>();
+            uiRootObj.AddComponent<PanelManager>();
+            uiRootObj.AddComponent<AudioManager>();
+            uiRootObj.AddComponent<SettingsManager>();
             
             if (preset == "Single Player" || preset == "Local Multiplayer" || preset == "Mobile")
             {
-                AddComponentByName(uiRootObj, "SaveSlotManager");
-                AddComponentByName(uiRootObj, "SaveSlotUI");
+                uiRootObj.AddComponent<SaveSlotManager>();
+                uiRootObj.AddComponent<SaveSlotUI>();
             }
 
             // Create SceneTransitionManager GameObject and attach component
             GameObject transitionObj = new GameObject("SceneTransitionManager");
-            AddComponentByName(transitionObj, "SceneTransitionManager");
+            transitionObj.AddComponent<SceneTransitionManager>();
 
             // Create EventSystem
             GameObject eventSystemObj = new GameObject("EventSystem");
@@ -206,27 +172,6 @@ namespace MCPForUnity.Editor.Helpers
 
             AssetDatabase.Refresh();
             Debug.Log("[MainMenuGenerator] Generation complete!");
-        }
-
-        private static void AddComponentByName(GameObject go, string className)
-        {
-            var type = System.Type.GetType(className);
-            if (type == null)
-            {
-                foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    type = assembly.GetType(className);
-                    if (type != null) break;
-                }
-            }
-            if (type != null)
-            {
-                go.AddComponent(type);
-            }
-            else
-            {
-                Debug.LogWarning($"[MainMenuGenerator] Could not find type '{className}' to add to {go.name}. It will be added dynamically when scripts compile.");
-            }
         }
     }
 }
