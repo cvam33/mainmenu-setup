@@ -5,6 +5,7 @@ using UnityEngine.UIElements;
 public class MainMenuManager : MonoBehaviour
 {
     public string sceneToLoad = "GameScene";
+    public string menuAlignment = "Middle Center";
 
     private UIDocument _uiDocument;
     private VisualElement _root;
@@ -21,6 +22,13 @@ public class MainMenuManager : MonoBehaviour
         if (_uiDocument == null) return;
         
         _root = _uiDocument.rootVisualElement;
+        
+        var menuRoot = _root.Q<VisualElement>("root");
+        if (menuRoot != null)
+        {
+            string alignClass = "menu-root--" + menuAlignment.ToLower().Replace(" ", "-");
+            menuRoot.AddToClassList(alignClass);
+        }
         
         _playButton = _root.Q<Button>("play-button");
         _settingsButton = _root.Q<Button>("settings-button");

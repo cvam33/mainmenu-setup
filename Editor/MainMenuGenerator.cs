@@ -10,7 +10,7 @@ namespace MCPForUnity.Editor.Helpers
 {
     public static class MainMenuGenerator
     {
-        public static void Generate(string preset, bool is2D, int saveSlots, string outputPath)
+        public static void Generate(string preset, bool is2D, int saveSlots, string outputPath, string menuAlignment)
         {
             Debug.Log($"[MainMenuGenerator] Starting generation in path: {outputPath}");
 
@@ -26,7 +26,15 @@ namespace MCPForUnity.Editor.Helpers
             Directory.CreateDirectory(settingsDir);
 
             // 3. Write UI Files
-            File.WriteAllText(Path.Combine(uiUxmlDir, "MainMenu.uxml"), MainMenuTemplateRegistry.GetUXMLMainMenu());
+            string alignClass = "menu-root--" + menuAlignment.ToLower().Replace(" ", "-");
+            string uxmlContent = MainMenuTemplateRegistry.GetUXMLMainMenu()
+                .Replace("class=\"menu-root\"", $"class=\"menu-root {alignClass}\"");
+            
+            // Rewrite the USS reference path dynamically to match our output path
+            string relativeUssPath = Path.Combine(outputPath, "UI", "USS", "MainMenu.uss").Replace("\\", "/");
+            uxmlContent = uxmlContent.Replace("project://database/Assets/MainMenu1/UI/USS/MainMenu.uss", "project://database/" + relativeUssPath);
+
+            File.WriteAllText(Path.Combine(uiUxmlDir, "MainMenu.uxml"), uxmlContent);
             File.WriteAllText(Path.Combine(uiUssDir, "MainMenu.uss"), MainMenuTemplateRegistry.GetUSSMainMenu());
 
             AssetDatabase.Refresh();
@@ -38,6 +46,8 @@ namespace MCPForUnity.Editor.Helpers
             // Create MainCamera
             GameObject cameraObj = new GameObject("Main Camera");
             var mainCamera = cameraObj.AddComponent<Camera>();
+            mainCamera.clearFlags = CameraClearFlags.SolidColor;
+            mainCamera.backgroundColor = new Color(0.08f, 0.09f, 0.11f, 1f); // Modern dark AAA charcoal background (#15181C)
             cameraObj.AddComponent<AudioListener>();
 
             // Create Cinemachine Brain
@@ -120,7 +130,8 @@ namespace MCPForUnity.Editor.Helpers
             {
                 uiDoc.panelSettings = panelSettings;
             }
-            uiRootObj.AddComponent<MainMenuManager>();
+            var mainMenuMgr = uiRootObj.AddComponent<MainMenuManager>();
+            mainMenuMgr.menuAlignment = menuAlignment;
             uiRootObj.AddComponent<PanelManager>();
             uiRootObj.AddComponent<AudioManager>();
             uiRootObj.AddComponent<SettingsManager>();
