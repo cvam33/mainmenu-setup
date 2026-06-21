@@ -7,7 +7,7 @@ namespace MCPForUnity.Editor.Helpers
         public static string GetUXMLMainMenu()
         {
             return @"<ui:UXML xmlns:ui=""UnityEngine.UIElements"" xmlns:uie=""UnityEditor.UIElements"" xsi=""http://www.w3.org/2001/XMLSchema-instance"" engine=""UnityEngine.UIElements"" editor=""UnityEditor.UIElements"" noNamespaceSchemaLocation=""../../UIElementsSchema/UIElements.xsd"" editor-extension-mode=""False"">
-    <Style src=""project://database/Assets/MainMenu1/UI/USS/MainMenu.uss?fileID=74334511186159674&amp;guid=0a927c3bc410427a92fb49c71b69446d&amp;type=3#MainMenu"" />
+    <Style src=""project://database/Assets/MainMenu1/UI/USS/MainMenu.uss"" />
     <ui:VisualElement name=""root"" class=""menu-root"">
         <ui:VisualElement name=""fade-overlay"" class=""fade-overlay"" />
         
@@ -81,10 +81,42 @@ namespace MCPForUnity.Editor.Helpers
             return @".menu-root {
     flex-grow: 1;
     background-color: rgba(18, 18, 18, 0.95);
-    justify-content: center;
-    align-items: center;
     font-size: 20px;
     color: white;
+}
+
+/* Alignment Classes */
+.menu-root--left {
+    align-items: flex-start;
+    justify-content: center;
+}
+.menu-root--left .menu-panel {
+    margin-left: 100px;
+}
+.menu-root--right {
+    align-items: flex-end;
+    justify-content: center;
+}
+.menu-root--right .menu-panel {
+    margin-right: 100px;
+}
+.menu-root--middle-center {
+    align-items: center;
+    justify-content: center;
+}
+.menu-root--top {
+    align-items: center;
+    justify-content: flex-start;
+}
+.menu-root--top .menu-panel {
+    margin-top: 50px;
+}
+.menu-root--bottom {
+    align-items: center;
+    justify-content: flex-end;
+}
+.menu-root--bottom .menu-panel {
+    margin-bottom: 50px;
 }
 
 .fade-overlay {
@@ -93,7 +125,6 @@ namespace MCPForUnity.Editor.Helpers
     height: 100%;
     background-color: black;
     opacity: 0;
-    picking-mode: Ignore;
 }
 
 .menu-panel {
@@ -118,24 +149,31 @@ namespace MCPForUnity.Editor.Helpers
     align-items: center;
 }
 
+/* AAA Button styling: Transparent by default, glowing accents on hover */
 .menu-button {
     width: 80%;
     padding: 12px;
     margin: 8px 0;
-    font-size: 20px;
+    font-size: 22px;
     -unity-font-style: bold;
-    background-color: #222831;
-    color: white;
-    border-width: 1px;
-    border-color: #393E46;
-    border-radius: 5px;
-    transition-duration: 0.15s;
+    background-color: rgba(0, 0, 0, 0);
+    color: #E5E7EB;
+    border-width: 0px;
+    border-left-width: 0px;
+    border-left-color: rgba(0, 173, 181, 0);
+    border-radius: 4px;
+    transition-property: background-color, color, scale, border-left-width, border-left-color, padding-left;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out-back;
 }
 
-.menu-button:hover {
-    background-color: #00ADB5;
-    color: #222831;
-    border-color: #00ADB5;
+.menu-button:hover, .menu-button:focus {
+    color: #00ADB5;
+    background-color: rgba(0, 173, 181, 0.12);
+    border-left-width: 4px;
+    border-left-color: #00ADB5;
+    padding-left: 20px;
+    scale: 1.05 1.05;
 }
 
 .settings-container {
@@ -159,7 +197,7 @@ namespace MCPForUnity.Editor.Helpers
 .credits-text {
     font-size: 18px;
     margin: 5px 0;
-    text-align: center;
+    -unity-text-align: middle-center;
 }
 
 .settings-tabs-container {
@@ -173,16 +211,17 @@ namespace MCPForUnity.Editor.Helpers
     flex-grow: 1;
     padding: 10px;
     font-size: 16px;
-    background-color: #222831;
-    color: white;
+    background-color: rgba(0, 0, 0, 0);
+    color: #E5E7EB;
     border-width: 1px;
     border-color: #393E46;
     border-radius: 0;
+    transition-property: background-color, color;
     transition-duration: 0.15s;
 }
 
 .settings-tab-button:hover {
-    background-color: #393E46;
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 .settings-tab-button--active {
@@ -226,16 +265,17 @@ namespace MCPForUnity.Editor.Helpers
     flex-grow: 1;
     padding: 6px;
     font-size: 14px;
-    background-color: #222831;
-    color: white;
+    background-color: rgba(0, 0, 0, 0);
+    color: #E5E7EB;
     border-width: 1px;
     border-color: #393E46;
     border-radius: 0;
+    transition-property: background-color, color;
     transition-duration: 0.15s;
 }
 
 .controls-sub-tab-button:hover {
-    background-color: #393E46;
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 .controls-sub-tab-button--active {

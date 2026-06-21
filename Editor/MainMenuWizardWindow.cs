@@ -28,6 +28,7 @@ namespace MCPForUnity.Editor.Helpers
         private bool _pixelPerfect = true;
         private bool _cameraConfiner = true;
         private string _outputPath = "Assets/MainMenu1";
+        private string _menuAlignment = "Middle Center";
 
         // Dashboard config targets
         private SceneAsset _tempSceneAsset;
@@ -63,6 +64,7 @@ namespace MCPForUnity.Editor.Helpers
             _is2D = EditorPrefs.GetBool("MainMenuWizard.Is2D", true);
             _saveSlotsCount = EditorPrefs.GetInt("MainMenuWizard.SaveSlotsCount", 3);
             _outputPath = EditorPrefs.GetString("MainMenuWizard.OutputPath", "Assets/MainMenu1");
+            _menuAlignment = EditorPrefs.GetString("MainMenuWizard.MenuAlignment", "Middle Center");
 
             string scenePath = Path.Combine(_outputPath, "Scenes", "MainMenu.unity").Replace("\\", "/");
             if (File.Exists(scenePath) && _currentStep == 1)
@@ -175,6 +177,7 @@ namespace MCPForUnity.Editor.Helpers
             EditorPrefs.SetBool("MainMenuWizard.Is2D", _is2D);
             EditorPrefs.SetInt("MainMenuWizard.SaveSlotsCount", _saveSlotsCount);
             EditorPrefs.SetString("MainMenuWizard.OutputPath", _outputPath);
+            EditorPrefs.SetString("MainMenuWizard.MenuAlignment", _menuAlignment);
         }
 
         private void DrawStep()
@@ -410,6 +413,23 @@ namespace MCPForUnity.Editor.Helpers
                 saveSlotsContainer.Add(slotsField);
                 _contentRoot.Add(saveSlotsContainer);
             }
+
+            var alignmentContainer = new VisualElement();
+            alignmentContainer.style.flexDirection = FlexDirection.Row;
+            alignmentContainer.style.justifyContent = Justify.SpaceBetween;
+            alignmentContainer.style.alignItems = Align.Center;
+            alignmentContainer.style.marginBottom = 15;
+
+            alignmentContainer.Add(new Label("Menu Alignment:") { style = { color = Color.white, fontSize = 13 } });
+
+            var alignField = new DropdownField(new List<string> { "Left", "Right", "Middle Center", "Top", "Bottom" }, _menuAlignment);
+            alignField.style.width = 120;
+            alignField.RegisterValueChangedCallback(evt => {
+                _menuAlignment = evt.newValue;
+                SaveState();
+            });
+            alignmentContainer.Add(alignField);
+            _contentRoot.Add(alignmentContainer);
 
             var folderContainer = new VisualElement();
             folderContainer.style.flexDirection = FlexDirection.Row;
@@ -760,6 +780,13 @@ namespace MCPForUnity.Editor.Helpers
                 _tempInputAsset = evt.newValue as UnityEngine.InputSystem.InputActionAsset;
             });
             _contentRoot.Add(inputField);
+
+            var alignmentField = new DropdownField("Menu Alignment", new List<string> { "Left", "Right", "Middle Center", "Top", "Bottom" }, _menuAlignment);
+            alignmentField.RegisterValueChangedCallback(evt => {
+                _menuAlignment = evt.newValue;
+                SaveState();
+            });
+            _contentRoot.Add(alignmentField);
 
             var saveBtn = new Button(ApplyAndSaveChanges) { text = "Save Changes" };
             saveBtn.style.height = 30;
@@ -1353,6 +1380,22 @@ namespace MCPForUnity.Editor.Helpers
                     {
                         mainMenuManager.sceneToLoad = _tempSceneAsset.name;
                     }
+                    mainMenuManager.menuAlignment = _menuAlignment;
+                }
+
+                var uiDoc = managerObj.GetComponent<UIDocument>();
+                if (uiDoc != null && uiDoc.rootVisualElement != null)
+                {
+                    var rootVE = uiDoc.rootVisualElement.Q<VisualElement>("root");
+                    if (rootVE != null)
+                    {
+                        rootVE.RemoveFromClassList("menu-root--left");
+                        rootVE.RemoveFromClassList("menu-root--right");
+                        rootVE.RemoveFromClassList("menu-root--middle-center");
+                        rootVE.RemoveFromClassList("menu-root--top");
+                        rootVE.RemoveFromClassList("menu-root--bottom");
+                        rootVE.AddToClassList("menu-root--" + _menuAlignment.ToLower().Replace(" ", "-"));
+                    }
                 }
 
                 var settings = managerObj.GetComponent<SettingsManager>();
@@ -1454,7 +1497,7 @@ namespace MCPForUnity.Editor.Helpers
 
             if (_currentStep == 4)
             {
-                MainMenuGenerator.Generate(_selectedPreset, _is2D, _saveSlotsCount, _outputPath);
+                MainMenuGenerator.Generate(_selectedPreset, _is2D, _saveSlotsCount, _outputPath, _menuAlignment);
                 _currentStep = 5;
                 SaveState();
                 DrawStep();
