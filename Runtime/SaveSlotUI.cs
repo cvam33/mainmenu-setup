@@ -9,6 +9,11 @@ public class SaveSlotUI : MonoBehaviour
 
     private void Awake()
     {
+        if (MainMenuManager.Instance != null && MainMenuManager.Instance.gameObject != gameObject)
+        {
+            return;
+        }
+
         _uiDocument = GetComponent<UIDocument>();
         if (_uiDocument == null) return;
 

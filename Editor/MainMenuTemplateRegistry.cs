@@ -289,10 +289,16 @@ namespace MCPForUnity.Editor.Helpers
 }
 
 .settings-content-title {
-    font-size: 28px;
+    font-size: 36px;
     -unity-font-style: bold;
     color: #00ADB5;
     margin-bottom: 35px;
+}
+
+.settings-tab-content {
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 25px;
 }
 
 /* High-contrast options controls styling overrides */
@@ -302,7 +308,8 @@ namespace MCPForUnity.Editor.Helpers
     border-width: 1px;
     border-color: #393E46;
     border-radius: 4px;
-    padding: 6px 12px;
+    padding: 8px 16px;
+    font-size: 18px;
 }
 .settings-dropdown .unity-base-field__input:hover {
     border-color: #00ADB5;
@@ -310,7 +317,8 @@ namespace MCPForUnity.Editor.Helpers
 .settings-dropdown .unity-base-field__label {
     color: #E5E7EB;
     -unity-font-style: bold;
-    min-width: 120px;
+    min-width: 250px;
+    font-size: 20px;
 }
 
 .settings-toggle .unity-toggle__checkmark {
@@ -318,8 +326,8 @@ namespace MCPForUnity.Editor.Helpers
     border-width: 1px;
     border-color: #393E46;
     border-radius: 4px;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
 }
 .settings-toggle:hover .unity-toggle__checkmark {
     border-color: #00ADB5;
@@ -331,40 +339,42 @@ namespace MCPForUnity.Editor.Helpers
 .settings-toggle .unity-base-field__label {
     color: #E5E7EB;
     -unity-font-style: bold;
-    min-width: 120px;
+    min-width: 250px;
+    font-size: 20px;
 }
 
 .settings-slider {
-    margin: 15px 0;
+    margin: 25px 0;
 }
 .settings-slider .unity-base-field__label {
     color: #E5E7EB;
     -unity-font-style: bold;
-    min-width: 120px;
+    min-width: 250px;
+    font-size: 20px;
 }
 .settings-slider .unity-slider__tracker {
     background-color: #222831;
     border-width: 0px;
-    height: 6px;
+    height: 8px;
 }
 .settings-slider .unity-slider__dragger {
     background-color: #00ADB5;
-    width: 16px;
-    height: 16px;
-    border-radius: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
     border-width: 0px;
-    margin-top: -5px;
+    margin-top: -6px;
 }
 
 .controls-header {
-    font-size: 18px;
+    font-size: 20px;
     -unity-font-style: bold;
     margin-bottom: 10px;
     color: #00ADB5;
 }
 
 .keybinds-scroll-view {
-    max-height: 450px;
+    max-height: 480px;
     background-color: rgba(20, 20, 20, 0.5);
     padding: 10px;
     border-radius: 5px;
@@ -379,8 +389,8 @@ namespace MCPForUnity.Editor.Helpers
 
 .controls-sub-tab-button {
     flex-grow: 1;
-    padding: 6px;
-    font-size: 14px;
+    padding: 10px;
+    font-size: 18px;
     background-color: rgba(0, 0, 0, 0);
     color: #E5E7EB;
     border-width: 1px;
@@ -405,13 +415,13 @@ namespace MCPForUnity.Editor.Helpers
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
+    padding: 12px 0;
     border-bottom-width: 1px;
     border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 .keybind-label {
-    font-size: 14px;
+    font-size: 18px;
     color: white;
     flex-grow: 1;
 }
@@ -421,15 +431,15 @@ namespace MCPForUnity.Editor.Helpers
 }
 
 .keybind-button {
-    width: 100px;
-    margin-left: 5px;
+    width: 140px;
+    margin-left: 10px;
     background-color: #393E46;
     color: white;
     border-width: 1px;
     border-color: #222831;
     border-radius: 3px;
-    padding: 5px;
-    font-size: 13px;
+    padding: 8px 10px;
+    font-size: 16px;
 }
 
 .keybind-button:hover {
