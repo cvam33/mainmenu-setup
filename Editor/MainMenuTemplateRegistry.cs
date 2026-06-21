@@ -22,43 +22,51 @@ namespace MCPForUnity.Editor.Helpers
             </ui:VisualElement>
         </ui:VisualElement>
  
-        <ui:VisualElement name=""settings-panel"" class=""menu-panel"" style=""display: none;"">
+        <ui:VisualElement name=""settings-panel"" class=""settings-panel-fullscreen menu-panel"" style=""display: none;"">
             <ui:VisualElement name=""rebind-overlay"" class=""rebind-overlay"" style=""display: none;"">
                 <ui:Label text=""PRESS ANY KEY..."" class=""rebind-overlay-text"" />
             </ui:VisualElement>
 
-            <ui:Label text=""SETTINGS"" class=""menu-title"" />
+            <ui:Label text=""SETTINGS"" class=""settings-title-fullscreen"" />
             
-            <ui:VisualElement class=""settings-tabs-container"">
-                <ui:Button text=""AUDIO"" name=""tab-audio-btn"" class=""settings-tab-button settings-tab-button--active"" />
-                <ui:Button text=""GRAPHICS"" name=""tab-graphics-btn"" class=""settings-tab-button"" />
-                <ui:Button text=""CONTROLS"" name=""tab-controls-btn"" class=""settings-tab-button"" />
-            </ui:VisualElement>
-
-            <ui:VisualElement class=""settings-container"">
-                <ui:VisualElement name=""tab-content-audio"" class=""settings-tab-content"">
-                    <ui:Slider label=""Master Volume"" name=""master-volume-slider"" value=""0.75"" high-value=""1"" class=""settings-slider"" />
-                    <ui:Slider label=""Music Volume"" name=""music-volume-slider"" value=""0.75"" high-value=""1"" class=""settings-slider"" />
-                    <ui:Slider label=""SFX Volume"" name=""sfx-volume-slider"" value=""0.75"" high-value=""1"" class=""settings-slider"" />
+            <ui:VisualElement class=""settings-layout-container"">
+                <ui:VisualElement class=""settings-sidebar"">
+                    <ui:Button text=""AUDIO"" name=""tab-audio-btn"" class=""settings-sidebar-button settings-sidebar-button--active"" />
+                    <ui:Button text=""GRAPHICS"" name=""tab-graphics-btn"" class=""settings-sidebar-button"" />
+                    <ui:Button text=""CONTROLS"" name=""tab-controls-btn"" class=""settings-sidebar-button"" />
+                    
+                    <ui:VisualElement style=""flex-grow: 1;"" />
+                    
+                    <ui:Button text=""MAIN MENU"" name=""settings-main-menu-button"" class=""settings-sidebar-button"" style=""display: none;"" />
+                    <ui:Button text=""BACK"" name=""settings-back-button"" class=""settings-sidebar-button"" />
                 </ui:VisualElement>
 
-                <ui:VisualElement name=""tab-content-graphics"" class=""settings-tab-content"" style=""display: none;"">
-                    <ui:DropdownField label=""Resolution"" name=""resolution-dropdown"" class=""settings-dropdown"" />
-                    <ui:Toggle label=""Fullscreen"" name=""fullscreen-toggle"" class=""settings-toggle"" />
-                    <ui:DropdownField label=""Quality"" name=""quality-dropdown"" class=""settings-dropdown"" />
-                    <ui:Toggle label=""VSync"" name=""vsync-toggle"" class=""settings-toggle"" />
-                </ui:VisualElement>
-
-                <ui:VisualElement name=""tab-content-controls"" class=""settings-tab-content"" style=""display: none;"">
-                    <ui:VisualElement class=""controls-sub-tabs-container"">
-                        <ui:Button text=""KEYBOARD"" name=""controls-sub-tab-keyboard-btn"" class=""controls-sub-tab-button controls-sub-tab-button--active"" />
-                        <ui:Button text=""CONTROLLER"" name=""controls-sub-tab-controller-btn"" class=""controls-sub-tab-button"" />
+                <ui:VisualElement class=""settings-content-area"">
+                    <ui:VisualElement name=""tab-content-audio"" class=""settings-tab-content"">
+                        <ui:Label text=""AUDIO CONFIGURATION"" class=""settings-content-title"" />
+                        <ui:Slider label=""Master Volume"" name=""master-volume-slider"" value=""0.75"" high-value=""1"" class=""settings-slider"" />
+                        <ui:Slider label=""Music Volume"" name=""music-volume-slider"" value=""0.75"" high-value=""1"" class=""settings-slider"" />
+                        <ui:Slider label=""SFX Volume"" name=""sfx-volume-slider"" value=""0.75"" high-value=""1"" class=""settings-slider"" />
                     </ui:VisualElement>
-                    <ui:ScrollView name=""controls-keyboard-scroll"" class=""keybinds-scroll-view"" />
-                    <ui:ScrollView name=""controls-controller-scroll"" class=""keybinds-scroll-view"" style=""display: none;"" />
-                </ui:VisualElement>
 
-                <ui:Button text=""BACK"" name=""settings-back-button"" class=""menu-button"" />
+                    <ui:VisualElement name=""tab-content-graphics"" class=""settings-tab-content"" style=""display: none;"">
+                        <ui:Label text=""GRAPHICS CONFIGURATION"" class=""settings-content-title"" />
+                        <ui:DropdownField label=""Resolution"" name=""resolution-dropdown"" class=""settings-dropdown"" />
+                        <ui:Toggle label=""Fullscreen"" name=""fullscreen-toggle"" class=""settings-toggle"" />
+                        <ui:DropdownField label=""Quality"" name=""quality-dropdown"" class=""settings-dropdown"" />
+                        <ui:Toggle label=""VSync"" name=""vsync-toggle"" class=""settings-toggle"" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name=""tab-content-controls"" class=""settings-tab-content"" style=""display: none;"">
+                        <ui:Label text=""CONTROLS CONFIGURATION"" class=""settings-content-title"" />
+                        <ui:VisualElement class=""controls-sub-tabs-container"">
+                            <ui:Button text=""KEYBOARD"" name=""controls-sub-tab-keyboard-btn"" class=""controls-sub-tab-button controls-sub-tab-button--active"" />
+                            <ui:Button text=""CONTROLLER"" name=""controls-sub-tab-controller-btn"" class=""controls-sub-tab-button"" />
+                        </ui:VisualElement>
+                        <ui:ScrollView name=""controls-keyboard-scroll"" class=""keybinds-scroll-view"" />
+                        <ui:ScrollView name=""controls-controller-scroll"" class=""keybinds-scroll-view"" style=""display: none;"" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
 
@@ -79,10 +87,20 @@ namespace MCPForUnity.Editor.Helpers
         public static string GetUSSMainMenu()
         {
             return @".menu-root {
-    flex-grow: 1;
-    background-color: rgba(18, 18, 18, 0.95);
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
     font-size: 20px;
     color: white;
+}
+
+.menu-root--paused {
+    background-color: rgba(0, 0, 0, 0.6);
 }
 
 /* Alignment Classes */
@@ -176,18 +194,6 @@ namespace MCPForUnity.Editor.Helpers
     scale: 1.05 1.05;
 }
 
-.settings-container {
-    width: 100%;
-}
-
-.settings-slider {
-    margin: 15px 0;
-}
-
-.settings-toggle {
-    margin: 15px 0;
-}
-
 .credits-scroll {
     height: 200px;
     width: 100%;
@@ -200,44 +206,154 @@ namespace MCPForUnity.Editor.Helpers
     -unity-text-align: middle-center;
 }
 
-.settings-tabs-container {
+/* AAA Fullscreen Settings Panel */
+.settings-panel-fullscreen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(18, 18, 18, 0.85);
+    padding: 50px 80px;
+    border-width: 0px;
+    border-radius: 0px;
+    box-sizing: border-box;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+.settings-title-fullscreen {
+    font-size: 54px;
+    -unity-font-style: bold;
+    color: #00ADB5;
+    margin-bottom: 40px;
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(0, 173, 181, 0.3);
+    padding-bottom: 15px;
+}
+
+.settings-layout-container {
     flex-direction: row;
-    justify-content: center;
-    margin-bottom: 20px;
+    flex-grow: 1;
     width: 100%;
 }
 
-.settings-tab-button {
+.settings-sidebar {
+    width: 280px;
+    border-right-width: 1px;
+    border-right-color: rgba(255, 255, 255, 0.15);
+    padding-right: 25px;
+    justify-content: flex-start;
+}
+
+.settings-content-area {
     flex-grow: 1;
-    padding: 10px;
-    font-size: 16px;
+    padding-left: 50px;
+    justify-content: flex-start;
+}
+
+.settings-sidebar-button {
+    width: 100%;
+    padding: 14px 20px;
+    margin: 6px 0;
+    font-size: 20px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
     background-color: rgba(0, 0, 0, 0);
     color: #E5E7EB;
-    border-width: 1px;
-    border-color: #393E46;
-    border-radius: 0;
-    transition-property: background-color, color;
+    border-width: 0px;
+    border-left-width: 0px;
+    border-left-color: rgba(0, 173, 181, 0);
+    border-radius: 4px;
+    transition-property: background-color, color, border-left-width, border-left-color, padding-left;
     transition-duration: 0.15s;
 }
 
-.settings-tab-button:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+.settings-sidebar-button:hover {
+    color: #00ADB5;
+    background-color: rgba(0, 173, 181, 0.08);
+    border-left-width: 4px;
+    border-left-color: #00ADB5;
+    padding-left: 28px;
 }
 
-.settings-tab-button--active {
-    background-color: #00ADB5;
-    color: #222831;
-    border-color: #00ADB5;
+.settings-sidebar-button--active {
+    background-color: rgba(0, 173, 181, 0.15);
+    color: #00ADB5;
+    border-left-width: 4px;
+    border-left-color: #00ADB5;
+    padding-left: 28px;
+}
+
+.settings-content-title {
+    font-size: 28px;
     -unity-font-style: bold;
+    color: #00ADB5;
+    margin-bottom: 35px;
 }
 
-.settings-tab-content {
-    width: 100%;
-    margin-bottom: 20px;
+/* High-contrast options controls styling overrides */
+.settings-dropdown .unity-base-field__input {
+    background-color: #222831;
+    color: #E5E7EB;
+    border-width: 1px;
+    border-color: #393E46;
+    border-radius: 4px;
+    padding: 6px 12px;
+}
+.settings-dropdown .unity-base-field__input:hover {
+    border-color: #00ADB5;
+}
+.settings-dropdown .unity-base-field__label {
+    color: #E5E7EB;
+    -unity-font-style: bold;
+    min-width: 120px;
 }
 
-.settings-dropdown {
+.settings-toggle .unity-toggle__checkmark {
+    background-color: #222831;
+    border-width: 1px;
+    border-color: #393E46;
+    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+}
+.settings-toggle:hover .unity-toggle__checkmark {
+    border-color: #00ADB5;
+}
+.settings-toggle .unity-toggle__checkmark-checked {
+    background-color: #00ADB5;
+    -unity-background-image-tint-color: #222831;
+}
+.settings-toggle .unity-base-field__label {
+    color: #E5E7EB;
+    -unity-font-style: bold;
+    min-width: 120px;
+}
+
+.settings-slider {
     margin: 15px 0;
+}
+.settings-slider .unity-base-field__label {
+    color: #E5E7EB;
+    -unity-font-style: bold;
+    min-width: 120px;
+}
+.settings-slider .unity-slider__tracker {
+    background-color: #222831;
+    border-width: 0px;
+    height: 6px;
+}
+.settings-slider .unity-slider__dragger {
+    background-color: #00ADB5;
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    border-width: 0px;
+    margin-top: -5px;
 }
 
 .controls-header {
@@ -248,7 +364,7 @@ namespace MCPForUnity.Editor.Helpers
 }
 
 .keybinds-scroll-view {
-    max-height: 250px;
+    max-height: 450px;
     background-color: rgba(20, 20, 20, 0.5);
     padding: 10px;
     border-radius: 5px;
@@ -257,7 +373,7 @@ namespace MCPForUnity.Editor.Helpers
 .controls-sub-tabs-container {
     flex-direction: row;
     justify-content: center;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     width: 100%;
 }
 
