@@ -8,8 +8,17 @@ public class SaveSlotManager : MonoBehaviour
 
     private void Awake()
     {
+        if (MainMenuManager.Instance != null && MainMenuManager.Instance.gameObject != gameObject)
+        {
+            return;
+        }
+
         if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        else 
+        {
+            Destroy(gameObject);
+            return;
+        }
     }
 
     public GameSaveData LoadGame(int slotIndex)

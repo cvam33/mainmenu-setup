@@ -14,19 +14,31 @@ public class PanelManager : MonoBehaviour
 
     private void Awake()
     {
+        if (MainMenuManager.Instance != null && MainMenuManager.Instance.gameObject != gameObject)
+        {
+            return;
+        }
+
         if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        else 
+        {
+            Destroy(gameObject);
+            return;
+        }
 
         _uiDocument = GetComponent<UIDocument>();
         if (_uiDocument != null)
         {
             _root = _uiDocument.rootVisualElement;
-            // Find all panels (by convention, elements with class 'menu-panel')
-            _root.Query<VisualElement>(className: "menu-panel").ForEach(panel =>
+            if (_root != null)
             {
-                _allPanels.Add(panel);
-                panel.style.display = DisplayStyle.None;
-            });
+                // Find all panels (by convention, elements with class 'menu-panel')
+                _root.Query<VisualElement>(className: "menu-panel").ForEach(panel =>
+                {
+                    _allPanels.Add(panel);
+                    panel.style.display = DisplayStyle.None;
+                });
+            }
         }
     }
 
