@@ -96,6 +96,11 @@ public class MainMenuManager : MonoBehaviour
                 ConfigureSettingsButtons(false);
             }
             ToggleVolumeBlur(false);
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayMainMenuMusic();
+            }
         }
         else
         {
@@ -106,6 +111,11 @@ public class MainMenuManager : MonoBehaviour
             {
                 _root.style.display = DisplayStyle.None;
                 ConfigureSettingsButtons(true);
+            }
+
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.StopMusic();
             }
         }
     }
