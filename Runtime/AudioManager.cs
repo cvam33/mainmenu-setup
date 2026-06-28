@@ -27,6 +27,7 @@ public class AudioManager : MonoBehaviour
     private AudioSource _musicSource;
     private AudioSource _sfxSource;
     private int _currentMusicIndex = 0;
+    private bool _isMusicActive = false;
 
     private void Awake()
     {
@@ -56,6 +57,7 @@ public class AudioManager : MonoBehaviour
 
         if (mainMenuMusic.Count > 0)
         {
+            _isMusicActive = true;
             PlayMusicAtIndex(0);
         }
 
@@ -69,7 +71,7 @@ public class AudioManager : MonoBehaviour
 
     private void Update()
     {
-        if (_musicSource != null && !_musicSource.isPlaying && mainMenuMusic.Count > 0)
+        if (_isMusicActive && _musicSource != null && !_musicSource.isPlaying && mainMenuMusic.Count > 0)
         {
             int nextIndex = _currentMusicIndex + 1;
             if (nextIndex >= mainMenuMusic.Count)
@@ -88,6 +90,28 @@ public class AudioManager : MonoBehaviour
             {
                 PlayMusicAtIndex(nextIndex);
             }
+        }
+    }
+
+    public void PlayMainMenuMusic()
+    {
+        _isMusicActive = true;
+        if (_musicSource != null && !_musicSource.isPlaying && mainMenuMusic.Count > 0)
+        {
+            if (_currentMusicIndex < 0 || _currentMusicIndex >= mainMenuMusic.Count)
+            {
+                _currentMusicIndex = 0;
+            }
+            PlayMusicAtIndex(_currentMusicIndex);
+        }
+    }
+
+    public void StopMusic()
+    {
+        _isMusicActive = false;
+        if (_musicSource != null)
+        {
+            _musicSource.Stop();
         }
     }
 
